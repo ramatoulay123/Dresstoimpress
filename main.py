@@ -47,6 +47,23 @@ def product_browse():
 
     return render_template("browse.html.jinja", products = results)  
 
+
+@app.route("/product/<product_id>")
+
+def product_page(product_id): 
+     
+
+     conn = connect_dv()
+     cursor = conn.cursor() 
+
+     cursor.execute(f"SELECT * FROM `Product` WHERE `id` = {product_id};") 
+
+     result = cursor.fetchone() 
+     cursor.close() 
+     conn.close() 
+
+     return render_template("product.html.jinja", product = result)  
+     
     
     
 
