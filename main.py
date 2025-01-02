@@ -186,4 +186,30 @@ def signup():
 @app.route("/cart")
 @flask_login.login_required 
 def cart(): 
-     return "cart page" 
+     conn = connect_dv()
+     cursor = conn.cursor() 
+     customer_id = flask_login.current_user.id
+     cursor.execute(f"SELECT * FROM `cart` WHERE `customer_id` = {customer_id};") 
+     cursor.execute(f"""
+      SELECT 
+      `name`, 
+      `price`,
+      `qty`,
+      `image`,
+      `product_id`,
+      `Cart`.`id` 
+      FROM `Cart`
+      JOIN `Product` ON `product_id` = `Product`.`id`
+      WHERE `customer_id = 12 
+     """
+         
+     )
+     results = cursor.fetchall() 
+    
+     cursor.close() 
+     conn.close() 
+
+     
+
+
+     return render_template("cart.html.jinja", products = results)  
