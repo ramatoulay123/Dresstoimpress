@@ -9,14 +9,53 @@
 
 </head>
 
-<body> 
+<body>
+    {% include "components/navbar.html.jinja" %}
+    <div class="container">
+        <h2>Shopping Cart</h2>
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Price</th>
+                        <th>Quantity</th>
+                        <th>Total</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in cart %}     
+                        <tr>
+                            <td>{{ item.name }}</td>
+                            <td>${{ item.price }}</td>
+                            <td>
+                                <form action="/update_quantity" method="POST">
+                                    <input type="number" name="quantity" value="{{ item.quantity }}" min="1" />
+                                    <input type="hidden" name="item_id" value="{{ item.id }}" />
+                                    <button type="submit">Update</button>
+                                </form>
+                            </td>
+                            <td>${{ item.price * item.quantity }}</td>
+                            <td>
+                                <form action="/remove_item" method="POST">
+                                    <input type="hidden" name="item_id" value="{{ item.id }}" />
+                                    <button type="submit">Remove</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="cart-summary">
+            <h4>Cart Summary</h4>
+            <p>Total Items: {{ total_items }}</p>
+            <p>Total Price: ${{ total_price }}</p>
+            <a href="/checkout" class="btn btn-primary">Proceed to Checkout</a>
+        </div>
+    </div>
 
-     {% include "components/navbar.html.jinja" %} 
-     <div class="table-responsive">
-  <table class="table">
-    
-  </table>
-</div> 
 
     
       <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>

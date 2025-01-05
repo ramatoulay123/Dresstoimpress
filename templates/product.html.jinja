@@ -6,17 +6,18 @@
 
 <body> 
 
-     {% include "components/navbar.html.jinja" %} 
-      {% for product in products %}
-    <div class="card" style="width: 18rem;"> 
-    <img src="{{item['image']}}" class = "card-img-top" alt="product image"> 
-    <div class="card-body">
-    <h5 card-title><{{item['name']}}</h5> 
-    <p class=card-text>{{item['description']}}</p>
-    <p class=card-text>< ${{item['price']}} </p> 
-    <a href="/cart"> class="btn btn-primary"> Add to Cart</a>  
-
-    {%end for%} 
+    {% include "components/navbar.html.jinja" %}
+{% for item in products %}
+    <div class="card" style="width: 18rem;">
+        <img src="{{ item['image'] }}" class="card-img-top" alt="product image">
+        <div class="card-body">
+            <h5 class="card-title">{{ item['name'] }}</h5>
+            <p class="card-text">{{ item['description'] }}</p>
+            <p class="card-text">${{ item['price'] }}</p>
+            <a href="/cart" class="btn btn-primary">Add to Cart</a>
+        </div>
+    </div>
+{% endfor %} 
 
     
     
