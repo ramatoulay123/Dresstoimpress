@@ -102,31 +102,48 @@ def product_page(product_id):
      conn.close() 
 
      return render_template("product.html.jinja", product = result)  
+
 @app.route("/signin", methods = ["POST", "GET"]) 
 def signin():
+
       if flask_login.current_user.is_authenticated:
+
          return redirect("/")
+
       else:  
+
        if request.method == "POST" :   
+
         username = request.form["username"].strip()     
+
         password = request.form["password"]     
 
+
         conn = connect_dv()
+
         cursor = conn.cursor()
 
+
         cursor.execute(f"SELECT * FROM `Customer` WHERE `username` = '{username}';") 
+
         result = cursor.fetchone() 
         if result is None:
-             
+
              flash("your username/password is incorrect") 
+
 
         elif password != result["password"]: 
              flash("your username/password is incorrect")
-        else: 
-             user = User(result["id"], result["username"], result["email"], result["full_name"]) 
-             flask_login.login_user(user)
 
-             return redirect('/')
+        else: 
+
+             user = User(result["id"], result["username"], result["email"], result["full_name"]) 
+
+        flask_login.login_user(user)
+
+      return render_template("signin.html.jinja")
+      
+    
         
 
 @app.route('/logout')
@@ -186,6 +203,7 @@ def signup():
 @app.route("/cart")
 @flask_login.login_required 
 def cart(): 
+    
      conn = connect_dv()
      cursor = conn.cursor() 
      customer_id = flask_login.current_user.id
@@ -194,22 +212,80 @@ def cart():
       SELECT 
       `name`, 
       `price`,
-      `qty`,
-      `image`,
+      `cart`. `quantity`,   
+      `image`,  
       `product_id`,
-      `Cart`.`id` 
-      FROM `Cart`
+      `cart`.`id` 
+      FROM `cart`
       JOIN `Product` ON `product_id` = `Product`.`id`
-      WHERE `customer_id = 12 
+      WHERE `customer_id` = 12 
      """
          
-     )
-     results = cursor.fetchall() 
-    
-     cursor.close() 
-     conn.close() 
-
+     ) 
      
+     results = cursor.fetchall()  
+     cart_total =0
+     cart_total = 0 
+     for item in results: 
+        cart_total += (item['price'] * item['quantity']) 
+
+        cursor.close() 
+        conn.close()   
+     
+    
+     return render_template("cart.html.jinja", product = results, cart_total = cart_total)    
+
+@app.route("/product/<product_id>/cart", methods = ["POST"])
+@flask_login.login_required
+def add_to_cart(product_id): 
+    quantity = request.form['quantity'] 
+    customer_id = flask_login.current_user.id 
+
+    conn = connect_dv
+    cursor = conn.cursor()  
+
+    cursor.execute("""
+    INSERT INTO `cart` (`product_id`, `customer_id`, `quantity`)
+    VALUES ({product_id}, {customer_id}, {quantity})
+    ON DUPLICATE KEY UPDATE
+          `quantity` = `quantity` + {quantity} 
+    """)     
+
+    conn.close() 
+    cursor.close() 
+    return redirect("/cart")            
 
 
-     return render_template("cart.html.jinja", products = results)  
+
+
+
+@app.route("/cart/<cart_id>/del", methods = ["POST"])
+@flask_login.login_required 
+def delete_cart(cart_id): 
+
+   conn = connect_dv()
+   cursor = conn.cursor()
+
+   cursor.execute(f"""DELETE FROM `cart` WHERE `id` = {cart_id} ;""")   
+
+   conn.close() 
+   cursor.close() 
+
+   return redirect("/cart")  
+
+
+@app.route("/cart/<cart_id>/update", methods = ["POST"])
+@flask_login.login_required
+def update_cart(cart_id): 
+    cart_item_quantity= 0
+    conn = connect_dv
+    cursor = conn.cursor() 
+    cursor.execute(f"""UPDATE `cart` SET `quantity`= {cart_item_quantity} WHERE `id` = {cart_id} ;""" )
+
+    conn.close()
+    cursor.close() 
+
+    return redirect("/cart") 
+
+
+
