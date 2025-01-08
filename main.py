@@ -238,22 +238,24 @@ def cart():
 @app.route("/product/<product_id>/cart", methods = ["POST"])
 @flask_login.login_required
 def add_to_cart(product_id): 
-    quantity = request.form['quantity'] 
-    customer_id = flask_login.current_user.id 
+      quantity = request.form['quantity'] 
+      customer_id = flash_login.current_user.user_id
 
-    conn = connect_dv
-    cursor = conn.cursor()  
 
-    cursor.execute("""
-    INSERT INTO `cart` (`product_id`, `customer_id`, `quantity`)
-    VALUES ({product_id}, {customer_id}, {quantity})
-    ON DUPLICATE KEY UPDATE
-          `quantity` = `quantity` + {quantity} 
-    """)     
+conn = connect_dv
+cursor = conn.cursor() 
 
-    conn.close() 
-    cursor.close() 
-    return redirect("/cart")            
+cursor.execute("""
+        INSERT INTO `cart` (`quantity`, `customer_id`, `product_id`)
+        VALUES ('{quantity}', '{customer_id}', '{product_id}')
+        ON DUPLICATE KEY UPDATE
+            `quantity` = `quantity` + {quantity} 
+        """)     
+
+conn.close() 
+cursor.close() 
+    
+return redirect("/cart")
 
 
 
