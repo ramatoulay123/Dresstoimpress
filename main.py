@@ -96,6 +96,7 @@ def product_page(product_id):
      cursor.execute(f"SELECT * FROM `Product` WHERE `id` = {product_id};") 
 
      result = cursor.fetchone() 
+
      if result is None: 
         abort(404)
      cursor.close() 
@@ -104,11 +105,12 @@ def product_page(product_id):
      return render_template("product.html.jinja", product = result)  
 
 @app.route("/signin", methods = ["POST", "GET"]) 
+
 def signin():
 
       if flask_login.current_user.is_authenticated:
 
-         return redirect("/")
+         return redirect("/") 
 
       else:  
 
@@ -165,6 +167,7 @@ def signup():
         username = request.form["username"] 
         phone = request.form["phone"]
         confirm_password = request.form["confirm_password"] 
+        
 
         if password == confirm_password: 
              redirect("/signin")
@@ -235,27 +238,43 @@ def cart():
     
      return render_template("cart.html.jinja", product = results, cart_total = cart_total)    
 
+
 @app.route("/product/<product_id>/cart", methods = ["POST"])
+
+
+
 @flask_login.login_required
-def add_to_cart(product_id): 
-      quantity = request.form['quantity'] 
-      customer_id = flash_login.current_user.user_id
+
+def add_to_cart(product_id):   
+
+    quantity = request.form['quantity'] 
+
+    customer_id = flask_login.current_user.id 
 
 
-conn = connect_dv
-cursor = conn.cursor() 
+    conn = connect_dv
 
-cursor.execute("""
-        INSERT INTO `cart` (`quantity`, `customer_id`, `product_id`)
-        VALUES ('{quantity}', '{customer_id}', '{product_id}')
-        ON DUPLICATE KEY UPDATE
-            `quantity` = `quantity` + {quantity} 
-        """)     
+    cursor = conn.cursor()  
 
-conn.close() 
-cursor.close() 
-    
-return redirect("/cart")
+
+    cursor.execute("""
+
+    INSERT INTO `cart` (`product_id`, `customer_id`, `quantity`)
+
+    VALUES ('{product_id}', '{customer_id }', '{quantity}') 
+
+    ON DUPLICATE KEY UPDATE
+
+          `quantity` = `quantity` + {quantity} 
+
+    """)      
+
+
+    conn.close() 
+
+    cursor.close() 
+
+    return redirect("/cart")     
 
 
 
@@ -285,9 +304,22 @@ def update_cart(cart_id):
     cursor.execute(f"""UPDATE `cart` SET `quantity`= {cart_item_quantity} WHERE `id` = {cart_id} ;""" )
 
     conn.close()
-    cursor.close() 
+    cursor.close()  
 
-    return redirect("/cart") 
+    return redirect("/cart")  
+
+@app.route("/checkout")
+@flask_login.login_required 
+def checkout_page(): 
+ conn = connect_dv
+ cursor = conn.cursor() 
+ cursor.execute()
+ 
+ 
+ return render_template("checkout.html.jinja") 
+
+
+
 
 
 

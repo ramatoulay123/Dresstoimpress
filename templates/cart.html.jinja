@@ -25,7 +25,6 @@
                     </tr>
                 </thead>
                 <tbody>
-<<<<<<< HEAD
                     {% for item in cart %}     
                         <tr>
                             <td>{{ item.name }}</td>
@@ -51,57 +50,11 @@
         </div>
         <div class="cart-summary">
             <h4>Cart Summary</h4>
-=======
-                    {% for item in products %}
-<tr>
-    <main class="container">
-        <td>
-           
-            <img src="{{ item['image'] }}" class="img-thumbnail" alt="{{ item['name'] }}" width="100" height="100">
-            {{ item['name'] }}
-        </td>
-        <td>
-            <div class="mb-3">
-               
-                <form id="updateform-{{ item['id'] }}" action="/cart/{{ item['id'] }}/update" method="POST">
-                    <input type="number" name="quantity" value="{{ item['quantity'] }}" min="1" />
-                    <input type="hidden" name="item_id" value="{{ item['id'] }}" />
-                </form>
-            </div>
-            
-            <button type="submit" class="btn btn-primary" form="updateform-{{ item['id'] }}">Update</button>
-        </td>
-        <td>
-           
-            ${{ item['price'] * item['quantity'] }}
-        </td>
-        <td>
-          
-            <form action="/cart/{{ item['id'] }}/delete" method="POST">
-                <input type="hidden" name="cart_id" value="{{ item['id'] }}" />
-                <button type="submit" class="btn btn-danger">Remove item</button>
-            </form>
-        </td>
-    </main>
-</tr>
-{% endfor %}
-                 
->>>>>>> d4353ae (checkout part 1)
            
             <a href="/checkout" class="btn btn-primary">Proceed to Checkout</a>
         </div>
     </div>
 
-<<<<<<< HEAD
-=======
-    
-    
-    </div>     
-
-    </main> 
-  </table>
-</div> 
->>>>>>> d4353ae (checkout part 1)
 
     
       <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
