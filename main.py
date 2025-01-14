@@ -79,20 +79,20 @@ def product_browse():
     return render_template("browse.html.jinja", products=results)
 
 
-@app.route("/product/<int:product_id>", methods=["GET", "POST"])
+@app.route("/product/<product_id>", methods=["GET", "POST"])
 @flask_login.login_required
 def product_page(product_id):
     conn = connect_dv()
     cursor = conn.cursor()
 
-    # Fetch product details
+    
     cursor.execute(f"SELECT * FROM `Product` WHERE `id` = {product_id};")
     product = cursor.fetchone()
 
     if not product:
         abort(404)
 
-    # Fetch reviews for the product
+    # get reviews from the product
     cursor.execute(f"""
         SELECT r.rating, r.comment, r.timestamp, c.username
         FROM Review r
@@ -103,28 +103,28 @@ def product_page(product_id):
     reviews = cursor.fetchall()
 
     if request.method == "POST":
-        # Check if the user already reviewed the product
+       
         customer_id = flask_login.current_user.id
-        cursor.execute(f"SELECT * FROM Review WHERE product_id = {product_id} AND customer_id = {customer_id};")
+        cursor.execute(f"SELECT * FROM `Review` WHERE `product_id` = '{product_id}' AND `customer_id` = '{customer_id}';")
         existing_review = cursor.fetchone()
 
         if existing_review:
             flash("You have already submitted a review for this product.", "error")
         else:
-            # Handle form submission for new review
+           
             rating = request.form["rating"]
             comment = request.form["comment"]
             timestamp = datetime.now()
 
-            # Insert the new review into the database
+            
             cursor.execute(f"""
-                INSERT INTO Review (product_id, customer_id, rating, comment, timestamp)
-                VALUES ({product_id}, {customer_id}, {rating}, %s, %s);
-            """, (comment, timestamp))
+                INSERT INTO `Review` (`product_id`, `customer_id`, `rating`, `comment`, `timestamp`)
+                VALUES ('{product_id}', '{customer_id}', '{rating}', '{comment}','{timestamp}'); 
+            """,)
             conn.commit()
 
             flash("Your review has been submitted!", "success")
-            return redirect(url_for('product_page', product_id=product_id))
+            return redirect("product.html.jinja", product_id=product_id)
 
     cursor.close()
     conn.close()
@@ -290,7 +290,8 @@ def checkout_page():
     conn = connect_dv()
     cursor = conn.cursor()
     cursor.execute(f"SELECT * FROM cart WHERE customer_id = {flask_login.current_user.id}")
-    cart_items = cursor
+   
+    return render_template("checkout.html.jinja") 
 
 
 
