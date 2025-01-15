@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, flash, abort
 import flask_login
 import pymysql
-from datetime import datetime  # Added for handling timestamps
+from datetime import datetime  
 from dynaconf import Dynaconf
 
 app = Flask(__name__)
@@ -79,18 +79,19 @@ def product_browse():
     return render_template("browse.html.jinja", products=results)
 
 
-@app.route("/product/<product_id>", methods=["GET", "POST"])
-@flask_login.login_required
-def product_page(product_id):
-    conn = connect_dv()
-    cursor = conn.cursor()
+# @app.route("/product/<product_id>", methods=["GET", "POST"])
+# @flask_login.login_required
+# def product_page(product_id):
+#     conn = connect_dv()
+#     cursor = conn.cursor()
 
     
-    cursor.execute(f"SELECT * FROM `Product` WHERE `id` = {product_id};")
-    product = cursor.fetchone()
+#     cursor.execute(f"SELECT * FROM `Product` WHERE `id` = {product_id};")
+#     product = cursor.fetchone()
 
-    if not product:
-        abort(404)
+#     if not product:
+#         abort(404)
+#     return render_template("product.html.jinja")  
 
     # get reviews from the product
     @app.route("/product/<product_id>", methods=["GET", "POST"])
@@ -113,7 +114,18 @@ def product_detail(product_id):
         WHERE r.product_id = {product_id}
         ORDER BY r.timestamp DESC;
     """)
-    reviews = cursor.fetchall()
+
+    product = cursor.fetchone() 
+
+    cursor.execute(f"""
+        SELECT rating, comment, Review.timestamp, username
+        FROM Review 
+        JOIN Customer ON customer_id = customer_id  
+        WHERE product_id = {product_id}
+        ORDER BY Review.timestamp DESC; 
+    """)                                                        
+    reviews = cursor.fetchall()  
+    
 
     if request.method == "POST":
         # Check if the user is logged in and has not already submitted a review
@@ -126,7 +138,7 @@ def product_detail(product_id):
         else:
             
             rating = request.form["rating"]
-            comment = request.form["comment"]
+            comment = request.form["comment"] 
             timestamp = datetime.now()
 
             cursor.execute(f"""
@@ -141,7 +153,7 @@ def product_detail(product_id):
     cursor.close()
     conn.close()
 
-    return render_template("product.html.jinja", product=product, reviews=reviews)
+    return render_template("product.html.jinja", product = product, reviews = reviews) 
 
 
 
@@ -281,10 +293,10 @@ def add_to_cart(product_id):
         """)
 
     conn.commit()
-    cursor.close()
-    conn.close()
+    cursor.close()  
+    conn.close()  
 
-    return redirect("/cart")
+    return redirect("/cart")      
 
 
 
@@ -300,7 +312,7 @@ def delete_cart(cart_id):
     return redirect("/cart") 
 
 
-@app.route("/cart/<cart_id>/update", methods=["POST"])
+@app.route("/cart/<cart_id>/update", methods=["POST"]) 
 @flask_login.login_required
 def update_cart(cart_id):
     cart_item_quantity = request.form['quantity']
