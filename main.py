@@ -93,17 +93,30 @@ def product_page(product_id):
         abort(404)
 
     # get reviews from the product
+    @app.route("/product/<product_id>", methods=["GET", "POST"])
+@flask_login.login_required
+def product_detail(product_id):
+    conn = connect_dv()
+    cursor = conn.cursor()
+
+    # Fetch product details
+    cursor.execute(f"""
+        SELECT * FROM `Product` WHERE `id` = {product_id};
+    """)
+    product = cursor.fetchone()
+
+    # Fetch reviews for the product
     cursor.execute(f"""
         SELECT r.rating, r.comment, r.timestamp, c.username
-        FROM Review r
-        JOIN Customer c ON r.customer_id = c.id
+        FROM `Review` r
+        JOIN `Customer` c ON r.customer_id = c.id
         WHERE r.product_id = {product_id}
         ORDER BY r.timestamp DESC;
     """)
     reviews = cursor.fetchall()
 
     if request.method == "POST":
-       
+        # Check if the user is logged in and has not already submitted a review
         customer_id = flask_login.current_user.id
         cursor.execute(f"SELECT * FROM `Review` WHERE `product_id` = '{product_id}' AND `customer_id` = '{customer_id}';")
         existing_review = cursor.fetchone()
@@ -111,25 +124,25 @@ def product_page(product_id):
         if existing_review:
             flash("You have already submitted a review for this product.", "error")
         else:
-           
+            
             rating = request.form["rating"]
             comment = request.form["comment"]
             timestamp = datetime.now()
 
-            
             cursor.execute(f"""
                 INSERT INTO `Review` (`product_id`, `customer_id`, `rating`, `comment`, `timestamp`)
-                VALUES ('{product_id}', '{customer_id}', '{rating}', '{comment}','{timestamp}'); 
-            """,)
+                VALUES ('{product_id}', '{customer_id}', '{rating}', '{comment}', '{timestamp}');
+            """)
             conn.commit()
 
             flash("Your review has been submitted!", "success")
-            return redirect("product.html.jinja", product_id=product_id)
+            return redirect(f"/product/{product_id}")
 
     cursor.close()
     conn.close()
 
     return render_template("product.html.jinja", product=product, reviews=reviews)
+
 
 
 @app.route("/signin", methods=["POST", "GET"])
@@ -239,24 +252,40 @@ def cart():
 
 @app.route("/product/<product_id>/cart", methods=["POST"])
 @flask_login.login_required
-def add_to_cart(product_id):  
+def add_to_cart(product_id):
+    # Get the quantity from the form
     quantity = request.form['quantity']
     customer_id = flask_login.current_user.id
-    conn = connect_dv()
-    cursor = conn.cursor() 
 
-    cursor.execute("""
-    INSERT INTO `cart` (`product_id`, `customer_id`, `quantity`)
-    VALUES (%s, %s, %s)
-    ON DUPLICATE KEY UPDATE
-    `quantity` = `quantity` + %s
-    """, (product_id, customer_id, quantity, quantity))     
+    conn = connect_dv()
+    cursor = conn.cursor()
+
+    
+    cursor.execute(f"""
+        SELECT * FROM `cart` WHERE `customer_id` = {customer_id} AND `product_id` = {product_id};
+    """)
+    existing_item = cursor.fetchone()
+
+    if existing_item:
+      
+        cursor.execute(f"""
+            UPDATE `cart`
+            SET `quantity` = `quantity` + {quantity}
+            WHERE `id` = {existing_item['id']};
+        """)
+    else:
+       
+        cursor.execute(f"""
+            INSERT INTO `cart` (`product_id`, `customer_id`, `quantity`)
+            VALUES ({product_id}, {customer_id}, {quantity});
+        """)
 
     conn.commit()
     cursor.close()
     conn.close()
 
     return redirect("/cart")
+
 
 
 @app.route("/cart/<cart_id>/del", methods=["POST"])
