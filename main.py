@@ -135,6 +135,7 @@ def product_detail(product_id):
 
         if existing_review:
             flash("You have already submitted a review for this product.", "error")
+<<<<<<< HEAD
         else:
             
             rating = request.form["rating"]
@@ -146,6 +147,14 @@ def product_detail(product_id):
                 VALUES ('{product_id}', '{customer_id}', '{rating}', '{comment}', '{timestamp}');
             """)
             conn.commit()
+=======
+        else: 
+           
+
+            
+           
+            conn.commit() 
+>>>>>>> 7602e78 (newchanges)
 
             flash("Your review has been submitted!", "success")
             return redirect(f"/product/{product_id}")
@@ -153,8 +162,26 @@ def product_detail(product_id):
     cursor.close()
     conn.close()
 
+
     return render_template("product.html.jinja", product = product, reviews = reviews) 
 
+@app.route("/addreview/<product_id>/", methods =["GET", "POST"])
+def addreview(product_id): 
+    conn = connect_dv()
+    cursor = conn.cursor() 
+    rating = request.form["rating"]
+    comment = request.form["comment"] 
+    timestamp = datetime.now() 
+    customer_id = flask_login.current_user.id 
+    cursor.execute(f"""
+                INSERT INTO `Review` (`product_id`, `customer_id`, `rating`, `comment`, `timestamp`)
+                VALUES
+                    ('{product_id}', '{customer_id}', '{rating}', '{comment}','{timestamp}')
+                    ON DUPLICATE KEY UPDATE `comment`= '{comment}', rating = '{rating}';   
+            """,) 
+    conn.close()      
+    cursor.close() 
+    return render_template("product.html.jinja")       
 
 
 @app.route("/signin", methods=["POST", "GET"])
@@ -249,7 +276,7 @@ def cart():
      FROM `cart`
      JOIN `Product` ON `product_id` = `Product`.`id`
      WHERE `customer_id` = {customer_id};
-    """)
+    """) 
 
     results = cursor.fetchall() 
     cart_total = 0
@@ -262,7 +289,7 @@ def cart():
     return render_template("cart.html.jinja", product=results, cart_total=cart_total)  
 
 
-@app.route("/product/<product_id>/cart", methods=["POST"])
+@app.route("/product/<product_id>/cart", methods=["POST", "GET"]) 
 @flask_login.login_required
 def add_to_cart(product_id):
     # Get the quantity from the form
@@ -292,11 +319,11 @@ def add_to_cart(product_id):
             VALUES ({product_id}, {customer_id}, {quantity});
         """)
 
-    conn.commit()
-    cursor.close()  
-    conn.close()  
+    conn.commit()   
+    cursor.close()       
+    conn.close()              
 
-    return redirect("/cart")      
+    return render_template("cart.html.jinja" )       
 
 
 
@@ -332,7 +359,7 @@ def checkout_page():
     cursor = conn.cursor()
     cursor.execute(f"SELECT * FROM cart WHERE customer_id = {flask_login.current_user.id}")
    
-    return render_template("checkout.html.jinja") 
+    return render_template("checkout.html.jinja")  
 
 
 
