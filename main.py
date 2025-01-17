@@ -135,7 +135,6 @@ def product_detail(product_id):
 
         if existing_review:
             flash("You have already submitted a review for this product.", "error")
-<<<<<<< HEAD
         else:
             
             rating = request.form["rating"]
@@ -147,14 +146,6 @@ def product_detail(product_id):
                 VALUES ('{product_id}', '{customer_id}', '{rating}', '{comment}', '{timestamp}');
             """)
             conn.commit()
-=======
-        else: 
-           
-
-            
-           
-            conn.commit() 
->>>>>>> 7602e78 (newchanges)
 
             flash("Your review has been submitted!", "success")
             return redirect(f"/product/{product_id}")
@@ -357,9 +348,23 @@ def update_cart(cart_id):
 def checkout_page():
     conn = connect_dv()
     cursor = conn.cursor()
-    cursor.execute(f"SELECT * FROM cart WHERE customer_id = {flask_login.current_user.id}")
-   
-    return render_template("checkout.html.jinja")  
+    customer_id = flask_login.current_user.id
+
+    cursor.execute(f"""
+        SELECT p.name, p.price, c.quantity
+        FROM cart c
+        JOIN Product p ON c.product_id = p.id
+        WHERE c.customer_id = {customer_id};
+    """)
+    cart_items = cursor.fetchall()
+    
+    total_amount = sum(item['price'] * item['quantity'] for item in cart_items)
+
+    cursor.close()
+    conn.close()
+    
+    return render_template("checkout.html.jinja", cart_items=cart_items, total_amount=total_amount)
+
 
 
 
