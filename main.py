@@ -91,7 +91,7 @@ def product_detail(product_id):
     """)
     product = cursor.fetchone()
 
-    # Fetch reviews for the product
+   
     cursor.execute(f"""
         SELECT r.rating, r.comment, r.timestamp, c.username
         FROM `Review` r
@@ -103,7 +103,7 @@ def product_detail(product_id):
     reviews = cursor.fetchall()
 
     if request.method == "POST":
-        # Check if the user is logged in and has not already submitted a review
+       
         customer_id = flask_login.current_user.id
         cursor.execute(f"SELECT * FROM `Review` WHERE `product_id` = '{product_id}' AND `customer_id` = '{customer_id}';")
         existing_review = cursor.fetchone()
@@ -145,7 +145,7 @@ def addreview(product_id):
             ON DUPLICATE KEY UPDATE `comment`= '{comment}', rating = '{rating}';   
     """) 
     conn.commit()      
-    cursor.close() 
+    cursor.close()  
     conn.close()
     return redirect(f"/product/{product_id}")    
 
