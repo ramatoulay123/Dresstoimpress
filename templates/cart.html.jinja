@@ -39,10 +39,10 @@ body{ background-color: antiquewhite;
                 <tbody>
                     {% for item in cart %}     
                         <tr>
-                            <td>{{ item.name }}</td>
-                            <td>${{ item.price }}</td>
+                            <td>{{ item['name'] }}</td>              
+                            <td>${{ item['price'] }}</td>      
                             <td>
-                                <form action="/cart/<cart_id>/update" method="POST">
+                                <form action="/cart/{{item['id']}}/update" method="POST">
                                     <input type="number" name="quantity" value="{{ item.quantity }}" min="1" />
                                     <input type="hidden" name="item_id" value="{{ item.id }}" />
                                     <button type="submit">Update</button> 
@@ -50,7 +50,7 @@ body{ background-color: antiquewhite;
                             </td>
                             <td> (item['price'] * item['quantity']) </td> 
                             <td>
-                                <form action="/cart/<cart_id>/del" method="POST"> 
+                                <form action="/cart/{{item[id]}}/delete" method="POST"> 
                                     <input type="hidden" name="item_id" value="{{ item.id }}" />
                                     <button type="submit">Remove</button>
                                 </form>
@@ -62,6 +62,7 @@ body{ background-color: antiquewhite;
         </div>
         <div class="cart-summary">
             <h4>Cart Summary</h4>
+            <p>${{cart_total}}</p> 
            
             <a href="/checkout" class="btn btn-primary">Proceed to Checkout</a>
         </div>

@@ -49,14 +49,14 @@ def connect_dv():
         host="10.100.34.80",
         database="rbarry_Dresstoimpress",
         user="rbarry",
-        password=conf.password,
-        autocommit=True,
-        cursorclass=pymysql.cursors.DictCursor
+        password=conf.password, 
+        autocommit=True, 
+        cursorclass=pymysql.cursors.DictCursor 
     )
     return conn
 
 
-@app.route("/")
+@app.route("/") 
 def index():
     return render_template("homepage.html.jinja")
 
@@ -79,28 +79,25 @@ def product_browse():
     return render_template("browse.html.jinja", products=results)
 
 
-@app.route("/product/<product_id>", methods=["GET", "POST"])
+@app.route("/product/<product_id>/", methods=["GET", "POST"])
 @flask_login.login_required
 def product_detail(product_id):
     conn = connect_dv()
     cursor = conn.cursor()
-
-    # Fetch product details
     cursor.execute(f"""
         SELECT * FROM `Product` WHERE `id` = {product_id};
-    """)
+    """) 
     product = cursor.fetchone()
 
-   
     cursor.execute(f"""
         SELECT r.rating, r.comment, r.timestamp, c.username
         FROM `Review` r
         JOIN `Customer` c ON r.customer_id = c.id
         WHERE r.product_id = {product_id}
         ORDER BY r.timestamp DESC;
-    """)
+    """)          
 
-    reviews = cursor.fetchall()
+    product = cursor.fetchall()
 
     if request.method == "POST":
        
@@ -113,24 +110,23 @@ def product_detail(product_id):
         else:
             rating = request.form["rating"]
             comment = request.form["comment"] 
-            timestamp = datetime.now()
-
+            timestamp = datetime.now() 
+            
             cursor.execute(f"""
                 INSERT INTO `Review` (`product_id`, `customer_id`, `rating`, `comment`, `timestamp`)
                 VALUES ('{product_id}', '{customer_id}', '{rating}', '{comment}', '{timestamp}');
             """)
-            conn.commit()
-
+            conn.commit()      
+            
             flash("Your review has been submitted!", "success")
-            return redirect(f"/product/{product_id}")
+            return redirect(f"/product/{product_id}") 
 
     cursor.close()
     conn.close()
 
-    return render_template("product.html.jinja", product=product, reviews=reviews)
+    return render_template("product.html.jinja", product = product,) 
 
-
-@app.route("/addreview/<product_id>/", methods=["GET", "POST"])
+@app.route("/addreview/<product_id>/", methods =["GET", "POST"])
 def addreview(product_id): 
     conn = connect_dv()
     cursor = conn.cursor() 
@@ -139,16 +135,14 @@ def addreview(product_id):
     timestamp = datetime.now() 
     customer_id = flask_login.current_user.id 
     cursor.execute(f"""
-        INSERT INTO `Review` (`product_id`, `customer_id`, `rating`, `comment`, `timestamp`)
-        VALUES
-            ('{product_id}', '{customer_id}', '{rating}', '{comment}','{timestamp}')
-            ON DUPLICATE KEY UPDATE `comment`= '{comment}', rating = '{rating}';   
-    """) 
-    conn.commit()      
-    cursor.close()  
-    conn.close()
-    return redirect(f"/product/{product_id}")    
-
+                INSERT INTO `Review` (`product_id`, `customer_id`, `rating`, `comment`, `timestamp`)
+                VALUES
+                    ('{product_id}', '{customer_id}', '{rating}', '{comment}','{timestamp}')
+                    ON DUPLICATE KEY UPDATE `comment`= '{comment}', rating = '{rating}';   
+            """,) 
+    conn.close()      
+    cursor.close() 
+    return render_template("product.html.jinja")    
 
 @app.route("/signin", methods=["POST", "GET"])
 def signin():
@@ -166,8 +160,8 @@ def signin():
 
         if result is None:
             flash("Your username/password is incorrect")
-        elif password != result["password"]:
-            flash("Your username/password is incorrect")
+        elif password != result["password"]:       
+            flash("Your username/password is incorrect")   
         else:
             user = User(result["id"], result["username"], result["email"], result["full_name"])
             flask_login.login_user(user)
@@ -227,10 +221,10 @@ def signup():
 @app.route("/cart")
 @flask_login.login_required
 def cart():
-    conn = connect_dv()
-    cursor = conn.cursor()
-    customer_id = flask_login.current_user.id
-    cursor.execute(f"""
+    conn = connect_dv()       
+    cursor = conn.cursor()                      
+    customer_id = flask_login.current_user.id      
+    cursor.execute(f"""        
         SELECT
         `name`, `price`, `cart`.`quantity`, `image`, `product_id`, `cart`.`id`
         FROM `cart`
@@ -249,7 +243,7 @@ def cart():
     return render_template("cart.html.jinja", products=results, cart_total=cart_total)
 
 
-@app.route("/product/<int:product_id>/cart", methods=["POST"])
+@app.route("/product/<product_id>/cart", methods=["POST"])
 @flask_login.login_required
 def add_to_cart(product_id):
     
@@ -263,7 +257,7 @@ def add_to_cart(product_id):
         cursor.execute("""
             SELECT * FROM `cart` WHERE `customer_id` = %s AND `product_id` = %s;
         """, (customer_id, product_id))
-        existing_item = cursor.fetchone()
+        existing_item = cursor.fetchone() 
 
         if existing_item:
             cursor.execute("""
@@ -290,7 +284,7 @@ def add_to_cart(product_id):
     return redirect("/cart")
 
 
-@app.route("/cart/<cart_id>/del", methods=["POST"])
+@app.route("/cart/<cart_id>/delete", methods=["POST"])
 @flask_login.login_required
 def delete_cart(cart_id):
     conn = connect_dv()
@@ -299,14 +293,14 @@ def delete_cart(cart_id):
     conn.commit()
     cursor.close()
     conn.close()
-    return redirect("/cart") 
+    return redirect("/cart")    
 
 
 @app.route("/cart/<cart_id>/update", methods=["POST"]) 
-@flask_login.login_required
+@flask_login.login_required 
 def update_cart(cart_id):
     cart_item_quantity = request.form['quantity']
-    conn = connect_dv()
+    conn = connect_dv() 
     cursor = conn.cursor()
     cursor.execute(f"""UPDATE `cart` SET `quantity`= {cart_item_quantity} WHERE `id` = {cart_id};""")
     conn.commit()
@@ -327,13 +321,13 @@ def checkout_page():
         FROM cart c
         JOIN Product p ON c.product_id = p.id
         WHERE c.customer_id = {customer_id};
-    """)
+    """) 
     cart_items = cursor.fetchall()
     
     total_amount = sum(item['price'] * item['quantity'] for item in cart_items)
 
-    cursor.close()
-    conn.close()
+    cursor.close() 
+    conn.close()        
     
     return render_template("checkout.html.jinja", cart_items=cart_items, total_amount=total_amount)
 
@@ -341,7 +335,7 @@ def checkout_page():
 @flask_login.login_required
 def complete_checkout():
     flash("Thank you for your purchase! Your order has been placed.", "success")
-    return redirect("/")
+    return redirect("/") 
 
 
 
