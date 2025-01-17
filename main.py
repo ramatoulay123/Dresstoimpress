@@ -70,7 +70,7 @@ def product_browse():
     if query is None:
         cursor.execute("SELECT * FROM `Product`;")
     else:
-        cursor.execute(f"SELECT * FROM `Product` WHERE `name` LIKE '%{query}%' OR `description` ;")  
+        cursor.execute(f"SELECT * FROM `Product` WHERE `name` LIKE '%{query}%' OR `description` LIKE '%{query}%'")  
 
     results = cursor.fetchall()
     cursor.close()
@@ -79,22 +79,7 @@ def product_browse():
     return render_template("browse.html.jinja", products=results)
 
 
-# @app.route("/product/<product_id>", methods=["GET", "POST"])
-# @flask_login.login_required
-# def product_page(product_id):
-#     conn = connect_dv()
-#     cursor = conn.cursor()
-
-    
-#     cursor.execute(f"SELECT * FROM `Product` WHERE `id` = {product_id};")
-#     product = cursor.fetchone()
-
-#     if not product:
-#         abort(404)
-#     return render_template("product.html.jinja")  
-
-    # get reviews from the product
-    @app.route("/product/<product_id>", methods=["GET", "POST"])
+@app.route("/product/<product_id>", methods=["GET", "POST"])
 @flask_login.login_required
 def product_detail(product_id):
     conn = connect_dv()
@@ -115,17 +100,7 @@ def product_detail(product_id):
         ORDER BY r.timestamp DESC;
     """)
 
-    product = cursor.fetchone() 
-
-    cursor.execute(f"""
-        SELECT rating, comment, Review.timestamp, username
-        FROM Review 
-        JOIN Customer ON customer_id = customer_id  
-        WHERE product_id = {product_id}
-        ORDER BY Review.timestamp DESC; 
-    """)                                                        
-    reviews = cursor.fetchall()  
-    
+    reviews = cursor.fetchall()
 
     if request.method == "POST":
         # Check if the user is logged in and has not already submitted a review
@@ -136,7 +111,6 @@ def product_detail(product_id):
         if existing_review:
             flash("You have already submitted a review for this product.", "error")
         else:
-            
             rating = request.form["rating"]
             comment = request.form["comment"] 
             timestamp = datetime.now()
@@ -153,10 +127,10 @@ def product_detail(product_id):
     cursor.close()
     conn.close()
 
+    return render_template("product.html.jinja", product=product, reviews=reviews)
 
-    return render_template("product.html.jinja", product = product, reviews = reviews) 
 
-@app.route("/addreview/<product_id>/", methods =["GET", "POST"])
+@app.route("/addreview/<product_id>/", methods=["GET", "POST"])
 def addreview(product_id): 
     conn = connect_dv()
     cursor = conn.cursor() 
@@ -165,14 +139,15 @@ def addreview(product_id):
     timestamp = datetime.now() 
     customer_id = flask_login.current_user.id 
     cursor.execute(f"""
-                INSERT INTO `Review` (`product_id`, `customer_id`, `rating`, `comment`, `timestamp`)
-                VALUES
-                    ('{product_id}', '{customer_id}', '{rating}', '{comment}','{timestamp}')
-                    ON DUPLICATE KEY UPDATE `comment`= '{comment}', rating = '{rating}';   
-            """,) 
-    conn.close()      
+        INSERT INTO `Review` (`product_id`, `customer_id`, `rating`, `comment`, `timestamp`)
+        VALUES
+            ('{product_id}', '{customer_id}', '{rating}', '{comment}','{timestamp}')
+            ON DUPLICATE KEY UPDATE `comment`= '{comment}', rating = '{rating}';   
+    """) 
+    conn.commit()      
     cursor.close() 
-    return render_template("product.html.jinja")       
+    conn.close()
+    return redirect(f"/product/{product_id}")    
 
 
 @app.route("/signin", methods=["POST", "GET"])
@@ -206,7 +181,7 @@ def signin():
 @app.route('/logout')
 def logout():
     flask_login.logout_user()
-    return ('/')
+    return redirect('/')
 
 
 @app.route("/signup", methods=["POST", "GET"])
@@ -255,19 +230,13 @@ def cart():
     conn = connect_dv()
     cursor = conn.cursor()
     customer_id = flask_login.current_user.id
-    cursor.execute(f"SELECT * FROM `cart` WHERE `customer_id` = {customer_id};")
     cursor.execute(f"""
-     SELECT
-     `name`,
-     `price`,
-     `cart`. `quantity`,  
-     `image`, 
-     `product_id`,
-     `cart`.`id`
-     FROM `cart`
-     JOIN `Product` ON `product_id` = `Product`.`id`
-     WHERE `customer_id` = {customer_id};
-    """) 
+        SELECT
+        `name`, `price`, `cart`.`quantity`, `image`, `product_id`, `cart`.`id`
+        FROM `cart`
+        JOIN `Product` ON `product_id` = `Product`.`id`
+        WHERE `customer_id` = {customer_id};
+    """)
 
     results = cursor.fetchall() 
     cart_total = 0
@@ -277,7 +246,7 @@ def cart():
     cursor.close()
     conn.close()  
 
-    return render_template("cart.html.jinja", product=results, cart_total=cart_total)  
+    return render_template("cart.html.jinja", products=results, cart_total=cart_total)
 
 
 @app.route("/product/<int:product_id>/cart", methods=["POST"])
@@ -288,24 +257,21 @@ def add_to_cart(product_id):
     customer_id = flask_login.current_user.id
 
     conn = connect_dv() 
-    cursor = conn.cursor
+    cursor = conn.cursor()
 
     try:
-       
         cursor.execute("""
             SELECT * FROM `cart` WHERE `customer_id` = %s AND `product_id` = %s;
         """, (customer_id, product_id))
         existing_item = cursor.fetchone()
 
         if existing_item:
-           
             cursor.execute("""
                 UPDATE `cart`
                 SET `quantity` = `quantity` + %s
                 WHERE `id` = %s;
             """, (quantity, existing_item['id']))
         else:
-            
             cursor.execute("""
                 INSERT INTO `cart` (`product_id`, `customer_id`, `quantity`)
                 VALUES (%s, %s, %s);
@@ -321,9 +287,7 @@ def add_to_cart(product_id):
         cursor.close()
         conn.close()
 
-  
-    return redirect("cart.html.jinja")  
-
+    return redirect("/cart")
 
 
 @app.route("/cart/<cart_id>/del", methods=["POST"])
@@ -377,7 +341,8 @@ def checkout_page():
 @flask_login.login_required
 def complete_checkout():
     flash("Thank you for your purchase! Your order has been placed.", "success")
-    return redirect("/") 
+    return redirect("/")
+
 
 
 
