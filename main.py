@@ -280,41 +280,49 @@ def cart():
     return render_template("cart.html.jinja", product=results, cart_total=cart_total)  
 
 
-@app.route("/product/<product_id>/cart", methods=["POST", "GET"]) 
+@app.route("/product/<int:product_id>/cart", methods=["POST"])
 @flask_login.login_required
 def add_to_cart(product_id):
-    # Get the quantity from the form
-    quantity = request.form['quantity']
+    
+    quantity = request.form.get('quantity', type=int, default=1)
     customer_id = flask_login.current_user.id
 
-    conn = connect_dv()
-    cursor = conn.cursor()
+    conn = connect_dv() 
+    cursor = conn.cursor
 
-    
-    cursor.execute(f"""
-        SELECT * FROM `cart` WHERE `customer_id` = {customer_id} AND `product_id` = {product_id};
-    """)
-    existing_item = cursor.fetchone()
-
-    if existing_item:
-      
-        cursor.execute(f"""
-            UPDATE `cart`
-            SET `quantity` = `quantity` + {quantity}
-            WHERE `id` = {existing_item['id']};
-        """)
-    else:
+    try:
        
-        cursor.execute(f"""
-            INSERT INTO `cart` (`product_id`, `customer_id`, `quantity`)
-            VALUES ({product_id}, {customer_id}, {quantity});
-        """)
+        cursor.execute("""
+            SELECT * FROM `cart` WHERE `customer_id` = %s AND `product_id` = %s;
+        """, (customer_id, product_id))
+        existing_item = cursor.fetchone()
 
-    conn.commit()   
-    cursor.close()       
-    conn.close()              
+        if existing_item:
+           
+            cursor.execute("""
+                UPDATE `cart`
+                SET `quantity` = `quantity` + %s
+                WHERE `id` = %s;
+            """, (quantity, existing_item['id']))
+        else:
+            
+            cursor.execute("""
+                INSERT INTO `cart` (`product_id`, `customer_id`, `quantity`)
+                VALUES (%s, %s, %s);
+            """, (product_id, customer_id, quantity))
 
-    return render_template("cart.html.jinja" )       
+        conn.commit()
+        flash('Item successfully added to the cart!', 'success')
+    except Exception as e:
+        conn.rollback()
+        print(f"Error: {e}")
+        flash('There was an error adding the item to the cart.', 'danger')
+    finally:
+        cursor.close()
+        conn.close()
+
+  
+    return redirect("cart.html.jinja")  
 
 
 
@@ -365,7 +373,11 @@ def checkout_page():
     
     return render_template("checkout.html.jinja", cart_items=cart_items, total_amount=total_amount)
 
-
+@app.route("/complete_checkout", methods=["POST"])
+@flask_login.login_required
+def complete_checkout():
+    flash("Thank you for your purchase! Your order has been placed.", "success")
+    return redirect("/") 
 
 
 

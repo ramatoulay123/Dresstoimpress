@@ -51,7 +51,7 @@ body{ background-color: antiquewhite;
                 </tr>
             </tfoot>
         </table>
-        <form action="{{ url_for('complete_checkout') }}" method="POST">
+        <form action="/complete_checkout" method="POST"> 
             <button type="submit">Complete Purchase</button>
         </form>
     {% else %}
